@@ -1,0 +1,9 @@
+{
+  "install": ["npm", "ci"],
+  "gates": [
+    { "name": "typecheck", "run": ["npm", "run", "typecheck"] },
+    { "name": "test", "run": ["npm", "test"] }
+  ],
+  "preview": { "enabled": false },
+  "merge": { "auto": true, "requiredCheck": "test", "maxRisk": "low" }
+}
