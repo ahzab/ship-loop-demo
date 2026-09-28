@@ -28,3 +28,32 @@ export function totalCents(inv: Invoice): number {
 export function formatCents(cents: number, currency = "EUR", locale = "en-IE"): string {
   return new Intl.NumberFormat(locale, { style: "currency", currency }).format(cents / 100);
 }
+
+/** Plain decimal with two places, e.g. 12000 -> "120.00". Integer maths only. */
+function decimalCents(cents: number): string {
+  const sign = cents < 0 ? "-" : "";
+  const abs = Math.abs(cents);
+  return `${sign}${Math.trunc(abs / 100)}.${String(abs % 100).padStart(2, "0")}`;
+}
+
+/** Quote a field per RFC 4180 when it contains a comma, quote, CR or LF. */
+function csvField(value: string): string {
+  return /[",\r\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+}
+
+/** Invoice as RFC 4180 CSV (CRLF line breaks), ending with subtotal, tax and total rows. */
+export function toCsv(inv: Invoice): string {
+  const rows = [
+    ["description", "quantity", "unit", "line_total"],
+    ...inv.items.map((i) => [
+      csvField(i.description),
+      String(i.quantity),
+      decimalCents(i.unitCents),
+      decimalCents(i.quantity * i.unitCents),
+    ]),
+    ["subtotal", "", "", decimalCents(subtotalCents(inv))],
+    ["tax", "", "", decimalCents(taxCents(inv))],
+    ["total", "", "", decimalCents(totalCents(inv))],
+  ];
+  return rows.map((r) => r.join(",")).join("\r\n") + "\r\n";
+}
